@@ -2,12 +2,39 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://qingants.github.io/categories/</loc>
+    <loc>https://qingants.github.io/tags/cas/</loc>
+    <lastmod>2016-06-26T06:29:57+08:00</lastmod>
   </url><url>
-    <loc>https://qingants.github.io/series/</loc>
+    <loc>https://qingants.github.io/categories/</loc>
+    <lastmod>2016-06-26T06:29:57+08:00</lastmod>
+  </url><url>
+    <loc>https://qingants.github.io/tags/mysql/</loc>
+    <lastmod>2016-06-26T06:29:57+08:00</lastmod>
+  </url><url>
+    <loc>https://qingants.github.io/posts/</loc>
+    <lastmod>2016-06-26T06:29:57+08:00</lastmod>
+  </url><url>
+    <loc>https://qingants.github.io/tags/redis/</loc>
+    <lastmod>2016-06-26T06:29:57+08:00</lastmod>
   </url><url>
     <loc>https://qingants.github.io/tags/</loc>
+    <lastmod>2016-06-26T06:29:57+08:00</lastmod>
+  </url><url>
+    <loc>https://qingants.github.io/posts/%E5%BA%93%E5%AD%98%E7%AE%A1%E7%90%86/</loc>
+    <lastmod>2016-06-26T06:29:57+08:00</lastmod>
+  </url><url>
+    <loc>https://qingants.github.io/posts/%E6%89%A3%E8%B4%B9%E6%9C%8D%E5%8A%A1/</loc>
+    <lastmod>2016-06-26T06:29:57+08:00</lastmod>
+  </url><url>
+    <loc>https://qingants.github.io/categories/%E6%8A%80%E6%9C%AF/</loc>
+    <lastmod>2016-06-26T06:29:57+08:00</lastmod>
+  </url><url>
+    <loc>https://qingants.github.io/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/</loc>
+    <lastmod>2016-06-26T06:29:57+08:00</lastmod>
   </url><url>
     <loc>https://qingants.github.io/</loc>
+    <lastmod>2016-06-26T06:29:57+08:00</lastmod>
+  </url><url>
+    <loc>https://qingants.github.io/series/</loc>
   </url>
 </urlset>

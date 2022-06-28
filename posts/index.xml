@@ -2,23 +2,47 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on 潇湘夜语</title>
-    <link>https://example.com/posts/</link>
+    <link>https://qingants.github.io/posts/</link>
     <description>Recent content in Posts on 潇湘夜语</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>cn</language>
-    <copyright>Copyright © 2008–2019</copyright>
-    <lastBuildDate>Tue, 28 Jun 2022 13:59:22 +0800</lastBuildDate>
+    <copyright>Copyright © 2022 Qingants</copyright>
+    <lastBuildDate>Sun, 26 Jun 2016 06:29:57 +0800</lastBuildDate>
     
-	<atom:link href="https://example.com/posts/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://qingants.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>HTTPS和SSL/TSL</title>
-      <link>https://example.com/posts/https/</link>
-      <pubDate>Tue, 28 Jun 2022 13:59:22 +0800</pubDate>
+      <title>库存系统</title>
+      <link>https://qingants.github.io/posts/%E5%BA%93%E5%AD%98%E7%AE%A1%E7%90%86/</link>
+      <pubDate>Sun, 26 Jun 2016 06:29:57 +0800</pubDate>
       
-      <guid>https://example.com/posts/https/</guid>
+      <guid>https://qingants.github.io/posts/%E5%BA%93%E5%AD%98%E7%AE%A1%E7%90%86/</guid>
       <description></description>
+    </item>
+    
+    <item>
+      <title>扣费服务设计</title>
+      <link>https://qingants.github.io/posts/%E6%89%A3%E8%B4%B9%E6%9C%8D%E5%8A%A1/</link>
+      <pubDate>Sun, 26 Jun 2016 06:29:57 +0800</pubDate>
+      
+      <guid>https://qingants.github.io/posts/%E6%89%A3%E8%B4%B9%E6%9C%8D%E5%8A%A1/</guid>
+      <description>&lt;h2 id=&#34;tx事物扣费&#34;&gt;Tx事物扣费&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;我在你转发送的飞机啊；收费的阿斯顿发；的飞机啊发阿斯顿发奖啊收快递费阿斯顿发奖阿克琉斯的飞机啊发到家阿迪上课飞机啊收；的飞机阿斯顿发奖啊了大煞风景阿迪上飞机阿斯顿发奖阿克苏的飞机阿迪上飞机阿斯顿发奖卡的飞机的卡上飞机啊发到家。
+
+我爱中国
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&#34;cas问题&#34;&gt;CAS问题&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;dkjkdkkd空空荡荡看
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&#34;记账&#34;&gt;记账&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;打开空调开的
+的大口大口大口大口的的的点点滴滴点点滴滴
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;快点快点快点开大口大口的卡
+&lt;/code&gt;&lt;/pre&gt;
+</description>
     </item>
     
   </channel>
