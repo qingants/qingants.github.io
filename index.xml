@@ -126,5 +126,21 @@
 </description>
     </item>
     
+    <item>
+      <title>About</title>
+      <link>https://qingants.github.io/about/</link>
+      <pubDate>Wed, 26 Jan 2022 23:59:37 +0800</pubDate>
+      
+      <guid>https://qingants.github.io/about/</guid>
+      <description>&lt;h2 id=&#34;我的爱好&#34;&gt;我的爱好&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;- Coding
+- Motorcycle
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&#34;我推荐的软件&#34;&gt;我推荐的软件&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;- Tunnel
+- SSC&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
   </channel>
 </rss>
