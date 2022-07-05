@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="cn">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	
+	<title>潇湘夜语  | 大话 Linux IO 多路复用</title>
+	<meta name="viewport" content="width=device-width,minimum-scale=1">
+	<meta name="generator" content="Hugo 0.101.0" />
+	
+	
+	<META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+	
+
+	
+	
+	<link href="/dist/app.css" rel="stylesheet">
+	
+
+	
+
+	
+	
+<link rel="shortcut icon" href="/img/favicon.png" type="image/png" />
+
+	
+
+	
+	
+	
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JQC9XJ1B8R"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-JQC9XJ1B8R', { 'anonymize_ip': false });
+}
+</script>
+
+	
+	
+	
+
+
+
+<link rel="stylesheet" href='https://qingants.github.io/lib/katex.min.css' crossorigin="anonymous">
+
+
+<script defer src='https://qingants.github.io/lib/katex.min.js' crossorigin="anonymous"></script>
+
+
+<script defer src='https://qingants.github.io/lib/contrib/auto-render.min.js'
+crossorigin="anonymous"
+onload='renderMathInElement(document.body);'></script>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false}
+            ]
+        });
+    });
+</script>
+
+	
+	
+	
+	<script>
+		(function (u, c) {
+			var d = document,
+				t = 'script',
+				o = d.createElement(t),
+				s = d.getElementsByTagName(t)[0];
+			o.src = u;
+			if (c) {
+				o.addEventListener('load', function (e) {
+					c(e);
+				});
+			}
+			s.parentNode.insertBefore(o, s);
+		})('https:\/\/qingants.github.io\/lib\/pangu.min.js', function () {
+			pangu.spacingPage();
+		});
+	</script>
+	
+	
+	
+	<style type="text/css" media="screen, print">
+		@font-face {
+			font-family: "FancyTitleFont";
+			font-style: normal;
+			font-display: swap;
+			src: url('https://qingants.github.io/fonts/%E6%9D%A8%E4%BB%BB%E4%B8%9C%E7%AB%B9%E7%9F%B3%E4%BD%93-Extralight.woff2') format('woff2'),
+				url('https://qingants.github.io/fonts/%E6%9D%A8%E4%BB%BB%E4%B8%9C%E7%AB%B9%E7%9F%B3%E4%BD%93-Extralight.woff') format('woff');
+		}
+		 
+		  
+		 
+		@font-face {
+			font-family: 'Noto Serif CJK SC';
+			font-style: normal;
+			font-weight: 300;
+			font-display: swap;
+			src: local('Noto Serif CJK SC Light'), local('NotoSerifCJK-Light'),
+				url('https://qingants.github.io/fonts/noto-serif-sc-v7-latin_chinese-simplified-300.woff2') format('woff2'),
+				 
+				url('https://qingants.github.io/fonts/noto-serif-sc-v7-latin_chinese-simplified-300.woff') format('woff');
+			 
+		}
+
+		 
+		@font-face {
+			font-family: 'Noto Serif CJK SC';
+			font-style: normal;
+			font-weight: 400;
+			font-display: swap;
+			src: local('Noto Serif CJK SC'), local('NotoSerifCJK-Regular'),
+				url('https://qingants.github.io/fonts/noto-serif-sc-v7-latin_chinese-simplified-regular.woff2') format('woff2'),
+				 
+				url('https://qingants.github.io/fonts/noto-serif-sc-v7-latin_chinese-simplified-regular.woff') format('woff');
+			 
+		}
+
+		 
+		@font-face {
+			font-family: 'Noto Serif CJK SC';
+			font-style: normal;
+			font-weight: 500;
+			font-display: swap;
+			src: local('Noto Serif CJK SC Medium'), local('NotoSerifCJK-Medium'),
+				url('https://qingants.github.io/fonts/noto-serif-sc-v7-latin_chinese-simplified-500.woff2') format('woff2'),
+				 
+				url('https://qingants.github.io/fonts/noto-serif-sc-v7-latin_chinese-simplified-500.woff') format('woff');
+			 
+		}
+	</style>
+	
+</head>
+
+<body class="bg-gray-100 text-gray-700 font-sans">
+	<div class="p-6 sm:p-10 md:p-16 flex flex-wrap">
+		<header class="w-full md:w-2/5 xl:w-1/2 md:pr-12 lg:pr-20 xl:pr-24 order-1 md:order-1 max-w-2xl">
+			<div
+				class="z-50 bg-gray-100 bg-opacity-75 bg-opacity-custom lg:min-w-0.7 max-w-xl md:float-right md:text-right leading-loose tracking-tight md:sticky md:top-0 pt-2">
+				
+<div>
+	<h2>
+		<a href="https://qingants.github.io/" title="潇湘夜语" class="heading font-cursive icon">潇湘夜语</a>
+	</h2>
+</div>
+<h1 class="pt-2">大话 Linux IO 多路复用</h1>
+
+<div class="flex flex-wrap justify-end pt-2 "><div class="md:flex-grow-0 font-light">
+	
+	
+	
+	
+	<a class="post-taxonomy-category text-medium-red-violet-600 hover:text-medium-red-violet-400"
+		href='/categories/tech-%E6%8A%80%E6%9C%AF'>Tech， 技术</a>
+	
+	
+	
+
+	
+	&nbsp;&nbsp;
+	
+
+	
+	
+	
+	
+	<a class="post-taxonomy-tag text-eucalyptus-500"
+		href='/tags/io-%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8'>IO 多路复用</a>&nbsp;&#47;
+	
+	<a class="post-taxonomy-tag text-eucalyptus-500"
+		href='/tags/epoll'>Epoll</a>&nbsp;&#47;
+	
+	<a class="post-taxonomy-tag text-eucalyptus-500"
+		href='/tags/poll'>Poll</a>&nbsp;&#47;
+	
+	<a class="post-taxonomy-tag text-eucalyptus-500"
+		href='/tags/select'>Select</a>&nbsp;&#47;
+	
+	<a class="post-taxonomy-tag text-eucalyptus-500"
+		href='/tags/linux'>Linux</a>&nbsp;&#47;
+	
+	<a class="post-taxonomy-tag text-eucalyptus-500"
+		href='/tags/unix'>Unix</a>
+	
+	
+	
+</div><time class="text-eucalyptus-500 md:text-right md:flex-grow font-light pl-4"
+		datetime="2014-05-10T23:06:32&#43;08:00">2014-5-10</time>
+</div>
+
+<hr />
+
+
+			</div>
+		</header>
+		<main role="main" class="w-full md:w-3/5 xl:w-1/2 max-w-3xl order-2 md:order-2 min-h-70vh pt-2 pb-4">
+			
+
+<article>
+	<section class="mx-auto content">
+		<div class="c-rich-text"><p>提到 IO 多路复用大家肯定立刻想到 select、poll、epoll，三个都是Linux提供的 IO 多路复用设施，可以监视多个描述符的读/写等事件，一旦某个描述符就绪（一般是读或者写事件发生了），就能够将发生的事件通知给关心的应用程序。select、poll、epoll本质上都是同步 I/O。Richard Stevens的<a href="https://book.douban.com/subject/1756533/">《UNIX网络编程》</a>书中给出了5种 IO 模型：</p>
+<ol>
+<li>blocking IO - 阻塞IO</li>
+<li>nonblocking IO - 非阻塞IO</li>
+<li>IO multiplexing - IO多路复用</li>
+<li>signal driven IO - 信号驱动IO</li>
+<li>asynchronous IO - 异步IO</li>
+</ol>
+<p>其中前面4种 IO 都可以归类为 synchronous IO - 同步 IO，在介绍 IO 多路复用之前，首先介绍一下这几种IO模型，signal driven IO 平时用的比较少，这里就不介绍。</p>
+<h2 id="1-io---同步异步阻塞非阻塞">1. IO - 同步、异步、阻塞、非阻塞</h2>
+<p>下面以网络 IO 中的读操作为例来讲述同步（synchronous） IO 和异步（asynchronous） IO、阻塞（blocking） IO 和非阻塞（non-blocking）IO 的异同。一般情况下，一次网络 IO 读操作会涉及两个系统对象：(1) 用户进程(线程)Process；(2) 内核对象kernel；两个处理阶段：</p>
+<blockquote>
+<ol>
+<li>
+<p>Waiting for the data to be ready - 等待数据准备好</p>
+</li>
+<li>
+<p>Copying the data from the kernel to the process - 将数据从内核空间的buffer拷贝到用户空间进程的 buffer
+IO 模型的差异就是再这两个系统对象、两个处理阶段的不同上。</p>
+</li>
+</ol>
+</blockquote>
+<h3 id="11-同步io-之-blocking-io">1.1 同步IO 之 Blocking IO</h3>
+<p><img src="/img/blocking-io.png" alt="阻塞 IO" title="阻塞 IO">
+如上图所示，用户进程 process 在 blocking IO 读 recvfrom 操作的两个阶段都是等待的。在数据没准备好的时候，process 原地等待 kernel 准备数据。kernel 准备好数据后，process 继续等待 kernel 将数据 copy 到自己的 buffer。在 kernel 完成数据的 copy 后 process 才会从 recvfrom 系统调用中返回。</p>
+<h3 id="12-同步io-之-nonblocking-io">1.2 同步IO 之 NonBlocking IO</h3>
+<p><img src="/img/nonblocking-io.png" alt="Non Blocking IO" title="non blocking IO">
+如上图所示，process在 nonblocking IO 读 recvfrom 操作的第一个阶段是不会阻塞等待地，如果 kernel 数据还没准备好，那么 recvfrom 会立刻返回一个 EWOULDBLOCK 错误。当 kernel 准备好数据后，进入处理的第二阶段的时候，process 会等待 kernel 将数据 copy 到自己的 buffer，在 kernel 完成数据的 copy 后 process 才会从 recvfrom 系统调用中返回。</p>
+<h3 id="13-同步io-之-io-多路复用">1.3 同步IO 之 IO 多路复用</h3>
+<p><img src="/img/multiplexing-io.png" alt="同步IO" title="IO 多路复用">
+IO 多路复用，就是我们熟知的 select、poll、epoll 模型。从图上可见，在 IO 多路复用的时候， process 在两个处理阶段都是 block 住等待的。初看好像 IO 多路复用没什么用，其实 select、poll、epoll 的优势在于可以以较少的代价来同时监听处理多个 IO。</p>
+<h3 id="14-异步io">1.4 异步IO</h3>
+<p><img src="/img/asynchronous-io.png" alt="异步IO" title="异步IO">
+从上图看出，异步 IO 要求 process 在 recvfrom 操作的两个处理阶段上都不能等待，也就是 process 调用 recvfrom 后立刻返回，kernel 自行去准备好数据并将数据从 kernel 的 buffer 中 copy 到 process 的 buffer 在通知 process 读操作完成了，然后 process 在去处理。遗憾的是，Linux 的网络 IO 中是不存在异步 I O的，Linux 的网络 IO 处理的第二阶段总是阻塞等待数据 copy 完成的。真正意义上的网络异步 IO 是 Windows 下的 IOCP（IO完成端口）模型。</p>
+<p><img src="/img/compare-io-models.png" alt="对比五总IO模型" title="对比五总IO模型">
+很多时候，我们比较容易混淆 non-blocking IO 和 asynchronous IO，认为是一样的。但是通过上图，几种 IO 模型的比较，会发现 non-blocking IO 和 asynchronous IO 的区别还是很明显的，non-blocking IO 仅仅要求处理的第一阶段不 block 即可，而 asynchronous IO 要求两个阶段都不能 blocking。</p>
+<h2 id="2-linux-的-socket事件-wakeup-callback-机制">2. Linux 的 socket事件 wakeup callback 机制</h2>
+<p>言归正传，在介绍 select、poll 和 epoll 前有必要说一说 Linux（2.6）内核加入的事件 wakeup callback 机制，这是 IO 多路复用机制存在的本质。Linux 通过 socket 睡眠队列来管理所有等待 socket 事件的 process，通过 wakeup 机制来异步唤醒整个睡眠队列上等待事件的 process。通知 process 相关事件发生。通常情况下 socket 事件发生的时候，其会顺序遍历 socket 睡眠队列上的每个 process 节点，调用每个 process 节点挂载的 callback 函数。在遍历的过程中，如果遇到某个节点是排他的，那么就终止遍历，总体上会涉及两大逻辑：1.睡眠等待逻辑；2. 唤醒逻辑。</p>
+<ol>
+<li>睡眠等待逻辑：涉及select、poll、epoll_wait的阻塞等待逻辑</li>
+</ol>
+<blockquote>
+<p>1.1 select、poll、epoll_wait陷入内核，判断监控的socket是否有关心的事件发生了，如果没，则为当前process构建一个wait_entry节点，然后插入到监控socket的sleep_list。</p>
+<p>1.2 进入循环的schedule直到关心的事件发生了。</p>
+<p>1.3 关心的事件发生后，将当前process的wait_entry节点从socket的sleep_list中删除。</p>
+</blockquote>
+<ol start="2">
+<li>唤醒逻辑</li>
+</ol>
+<blockquote>
+<p>2.1 socket的事件发生了，然后socket顺序遍历其睡眠队列，依次调用每个wait_entry节点的callback函数。</p>
+<p>2.2 直到完成队列的遍历或遇到某个wait_entry节点是排他的才停止。</p>
+<p>2.3 一般情况下callback包含两个逻辑：</p>
+<p>  2.3.1 wait_entry自定义的私有逻辑。</p>
+<p>  2.3.2 唤醒的公共逻辑，主要用于将该wait_entry的process放入CPU的就绪队列，让CPU随后可以调度其执行。</p>
+</blockquote>
+<p>下面就上面的两大逻辑，分别阐述select、poll、epoll的异同，找到epoll能够比select、poll更高效的原因。</p>
+<h2 id="3-select-1024">3. select-1024</h2>
+<p>在一个高性能的网络服务上，大多情况下一个服务进程(线程)需要同时处理很多个 socket，我们需要公平对待所有 socket；对于 read 而言，哪个 socket 有数据可读，process 就去读取该 socket 的数据来处理。于是对于 read，一个最朴素的需求就是关心的N个 socket 是否有数据”可读”，也就是我们期待”可读”事件的通知，而不是盲目地对每个 socket 调用 recv/recvfrom 来尝试接收数据。我们应该block 在等待事件的发生上，这个事件简单点就是”关心的N个 socket 中一个或多个 socket 有数据可读了”，当 block 解除的时候，就意味着，我们一定可以找到一个或多个 socket 上有可读的数据。另一方面，根据上面的 socket wakeup callback 机制，用户进程并不知道什么时候，哪个 socket 会有读事件发生；于是，process 需要同时插入到这N个 socket 的 sleep_list 上等待任意一个 socket 可读事件发生而被唤醒，当时 process 被唤醒的时候，其 callback 里面应该有个逻辑去检查具体那些 socket 可读了。</p>
+<p>于是，select 模型的多路复用逻辑就清晰了，select 为每个 socket 引入一个 poll 逻辑，该 poll 逻辑用于收集 socket 发生的事件，对于可读事件来说，简单伪码如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#111">poll</span><span style="color:#111">()</span> <span style="color:#111">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 其他逻辑
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#00a8c8">if</span> <span style="color:#111">(</span><span style="color:#111">recieve</span> <span style="color:#111">queque</span> <span style="color:#111">is</span> <span style="color:#111">not</span> <span style="color:#111">empty</span><span style="color:#111">)</span> <span style="color:#111">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#111">sk_event</span> <span style="color:#f92672">|=</span> <span style="color:#111">POLL_IN</span><span style="color:#111">;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#111">}</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#75715e">// 其他逻辑
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#111">}</span>
+</span></span></code></pre></div><p>接下来就到 select 的逻辑了，下面是 select 的函数原型：5个参数，后面4个参数都是in/out类型(值可能会被修改返回)</p>
+<div class="highlight"><pre tabindex="0" style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#00a8c8">int</span> <span style="color:#75af00">select</span><span style="color:#111">(</span><span style="color:#00a8c8">int</span> <span style="color:#111">nfds</span><span style="color:#111">,</span> <span style="color:#111">fd_set</span> <span style="color:#f92672">*</span><span style="color:#00a8c8">restrict</span> <span style="color:#111">readfds</span><span style="color:#111">,</span> <span style="color:#111">fd_set</span> <span style="color:#f92672">*</span><span style="color:#00a8c8">restrict</span> <span style="color:#111">writefds</span><span style="color:#111">,</span> <span style="color:#111">fd_set</span> <span style="color:#f92672">*</span><span style="color:#00a8c8">restrict</span> <span style="color:#111">exceptfds</span><span style="color:#111">,</span> <span style="color:#00a8c8">struct</span> <span style="color:#111">timeval</span> <span style="color:#f92672">*</span><span style="color:#00a8c8">restrict</span> <span style="color:#111">timeout</span><span style="color:#111">);</span>
+</span></span></code></pre></div><p>当用户 process 调用 select 的时候，select 会将需要监控的 readfds 集合拷贝到内核空间（假设监控的仅仅是socket可读），然后遍历自己监控的 socket，挨个调用 sk 的 poll 逻辑以便检查该 sk 是否有可读事件，遍历完所有的 socket 后，如果没有任何一个 socket 可读，那么 select 会调用 schedule_timeout 进入 schedule 循环，使得 process 进入睡眠。如果在 timeout 时间内某个 sk 上有数据可读了，或者等待 timeout 了，则调用 select 的 process 会被唤醒，接下来 select 就是遍历监控的 sk 集合，挨个收集可读事件并返回给用户了，相应的伪码如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#00a8c8">for</span> <span style="color:#111">(</span><span style="color:#111">sk</span> <span style="color:#111">in</span> <span style="color:#111">readfds</span><span style="color:#111">)</span> <span style="color:#111">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#111">sk_event</span><span style="color:#111">.</span><span style="color:#111">evt</span> <span style="color:#f92672">=</span> <span style="color:#111">sk</span><span style="color:#111">.</span><span style="color:#111">poll</span><span style="color:#111">();</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#111">sk_event</span><span style="color:#111">.</span><span style="color:#111">sk</span> <span style="color:#f92672">=</span> <span style="color:#111">sk</span><span style="color:#111">;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#111">ret_event_for_process</span><span style="color:#111">;</span>
+</span></span><span style="display:flex;"><span><span style="color:#111">}</span>
+</span></span></code></pre></div><p>通过上面的select逻辑过程分析，相信大家都意识到，select存在两个问题：</p>
+<blockquote>
+<p>[1] 被监控的 fds 需要从用户空间拷贝到内核空间，为了减少数据拷贝带来的性能损坏，内核对被监控的fds集合大小做了限制，并且这个是通过宏控制的，大小不可改变(限制为1024)，为了突破这个限制曾经无数次自己编译 Linux 内核。</p>
+<p>[2] 被监控的 fds 集合中，只要有一个有数据可读，整个 socket 集合就会被遍历一次调用 sk 的poll 函数收集可读事件，由于当初的需求是朴素，仅仅关心是否有数据可读这样一个事件，当事件通知来的时候，由于数据的到来是异步的，我们不知道事件来的时候，有多少个被监控的 socket 有数据可读了，于是，只能挨个遍历每个 socket 来收集可读事件。</p>
+</blockquote>
+<p>到这里，我们有三个问题需要解决：</p>
+<ol>
+<li>被监控的 fds 集合限制为1024，对于现在的服务器来说1024时在是太小了我们希望能够有个比较大的可监控 fds 集合。</li>
+<li>fds 集合需要从用户空间拷贝到内核空间的问题，我们希望不需要拷贝。</li>
+<li>当被监控的 fds 中某些有数据可读的时候，我们希望通知更加精细一点，就是我们希望能够从通知中得到有可读事件的 fds 列表，而不是需要遍历整个 fds 来收集。</li>
+</ol>
+<h2 id="4-poll-鸡肋">4. poll-鸡肋</h2>
+<p>select遗留的三个问题中，问题(1)只是用法限制问题，问题(2)和(3)则是性能问题。poll 和 select 非常相似，poll 并没着手解决性能问题，poll 只是解决了 select 的问题(1)fds集合大小1024限制问题。下面是 poll 的函数原型，poll 改变了 fds 集合的描述方式，使用了 pollfd 结构而不是 select 的 fd_set 结构，使得 poll 支持的 fds 集合限制远大于 select 的1024。poll 虽然解决了 fds 集合大小1024的限制问题，但是，它并没改变大量描述符数组被整体复制于用户态和内核态的地址空间之间，以及个别描述符就绪触发整体描述符集合的遍历的低效问题。poll 随着监控的 socket 集合的增加性能线性下降，poll 不适合用于大并发场景。</p>
+<div class="highlight"><pre tabindex="0" style="color:#272822;background-color:#fafafa;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#00a8c8">int</span> <span style="color:#75af00">poll</span><span style="color:#111">(</span><span style="color:#00a8c8">struct</span> <span style="color:#111">pollfd</span> <span style="color:#f92672">*</span><span style="color:#111">fds</span><span style="color:#111">,</span> <span style="color:#111">nfds_t</span> <span style="color:#111">nfds</span><span style="color:#111">,</span> <span style="color:#00a8c8">int</span> <span style="color:#111">timeout</span><span style="color:#111">);</span>
+</span></span></code></pre></div><h2 id="5-epoll终极武功">5. epoll—终极武功</h2>
+<p>select遗留的三个问题，问题(1)是比较好解决，poll简单两三下就解决掉了，但是poll的解决有点鸡肋。要解决问题(2)和(3)似乎比较棘手，要怎么解决呢？我们知道，在计算机行业中，有两种解决问题的思想：</p>
+<blockquote>
+<p>[1] 计算机科学领域的任何问题, 都可以通过添加一个中间层来解决。
+[2] 变集中(中央)处理为分散(分布式)处理。
+下面，我们看看，epoll在解决select的遗留问题(2)和(3)的时候，怎么运用这两个思想的。</p>
+</blockquote>
+<h3 id="51-fds集合拷贝问题的解决">5.1 fds集合拷贝问题的解决</h3>
+<p>对于IO多路复用，有两件事是必须要做的(对于监控可读事件而言)：1. 准备好需要监控的fds集合；2. 探测并返回fds集合中哪些fd可读了。细看 select 或 poll 的函数原型，我们会发现，每次调用 select 或 poll 都在重复地准备(集中处理)整个需要监控的 fds 集合。然而对于频繁调用的 select 或 poll 而言，fds 集合的变化频率要低得多，我们没必要每次都重新准备(集中处理)整个 fds 集合。</p>
+<p>于是，epoll 引入了 epoll_ctl 系统调用，将高频调用的 epoll_wait 和低频的 epoll_ctl 隔离开。同时，epoll_ctl通过(EPOLL_CTL_ADD、EPOLL_CTL_MOD、EPOLL_CTL_DEL)三个操作来分散对需要监控的fds集合的修改，做到了有变化才变更，将select或poll高频、大块内存拷贝(集中处理)变成epoll_ctl的低频、小块内存的拷贝(分散处理)，避免了大量的内存拷贝。同时，对于高频epoll_wait的可读就绪的fd集合返回的拷贝问题，epoll通过内核与用户空间mmap(内存映射)同一块内存来解决。mmap将用户空间的一块地址和内核空间的一块地址同时映射到相同的一块物理内存地址（不管是用户空间还是内核空间都是虚拟地址，最终要通过地址映射映射到物理地址），使得这块物理内存对内核和对用户均可见，减少用户态和内核态之间的数据交换。</p>
+<p>另外，epoll通过epoll_ctl来对监控的fds集合来进行增、删、改，那么必须涉及到fd的快速查找问题，于是，一个低时间复杂度的增、删、改、查的数据结构来组织被监控的fds集合是必不可少的了。在Linux 2.6.8之前的内核，epoll使用hash来组织fds集合，于是在创建epoll fd的时候，epoll需要初始化hash的大小。于是epoll_create(int size)有一个参数size，以便内核根据size的大小来分配hash的大小。在linux 2.6.8以后的内核中，epoll使用红黑树来组织监控的fds集合，于是epoll_create(int size)的参数size实际上已经没有意义了。</p>
+<h3 id="52-按需遍历就绪的fds集合">5.2 按需遍历就绪的fds集合</h3>
+<p>通过上面的socket的睡眠队列唤醒逻辑我们知道，socket唤醒睡眠在其睡眠队列的wait_entry(process)的时候会调用wait_entry的回调函数callback，并且，我们可以在callback中做任何事情。为了做到只遍历就绪的fd，我们需要有个地方来组织那些已经就绪的fd。为此，epoll引入了一个中间层，一个双向链表(ready_list)，一个单独的睡眠队列(single_epoll_wait_list)，并且，与select或poll不同的是，epoll的process不需要同时插入到多路复用的socket集合的所有睡眠队列中，相反process只是插入到中间层的epoll的单独睡眠队列中，process睡眠在epoll的单独队列上，等待事件的发生。同时，引入一个中间的wait_entry_sk，它与某个socket sk密切相关，wait_entry_sk睡眠在sk的睡眠队列上，其callback函数逻辑是将当前sk排入到epoll的ready_list中，并唤醒epoll的single_epoll_wait_list。而single_epoll_wait_list上睡眠的process的回调函数就明朗了：遍历ready_list上的所有sk，挨个调用sk的poll函数收集事件，然后唤醒process从epoll_wait返回。
+于是，整个过来可以分为以下几个逻辑：</p>
+<p>（1）epoll_ctl EPOLL_CTL_ADD逻辑</p>
+<blockquote>
+<ol>
+<li>构建睡眠实体wait_entry_sk，将当前socket sk关联给wait_entry_sk，并设置wait_entry_sk的回调函数为epoll_callback_sk</li>
+<li>将wait_entry_sk排入当前socket sk的睡眠队列上
+回调函数epoll_callback_sk的逻辑如下：</li>
+<li>将之前关联的sk排入epoll的ready_list</li>
+<li>然后唤醒epoll的单独睡眠队列single_epoll_wait_list</li>
+</ol>
+</blockquote>
+<p>（2）epoll_wait逻辑</p>
+<blockquote>
+<ol>
+<li>
+<p>构建睡眠实体wait_entry_proc，将当前process关联给wait_entry_proc，并设置回调函数为epoll_callback_proc</p>
+</li>
+<li>
+<p>判断epoll的ready_list是否为空，如果为空，则将wait_entry_proc排入epoll的single_epoll_wait_list中，随后进入schedule循环，这会导致调用epoll_wait的process睡眠。</p>
+</li>
+<li>
+<p>wait_entry_proc被事件唤醒或超时醒来，wait_entry_proc将被从single_epoll_wait_list移除掉，然后wait_entry_proc执行回调函数epoll_callback_proc</p>
+</li>
+</ol>
+</blockquote>
+<p>回调函数epoll_callback_proc的逻辑如下：</p>
+<blockquote>
+<ol>
+<li>
+<p>遍历epoll的ready_list，挨个调用每个sk的poll逻辑收集发生的事件，对于监控可读事件而已，ready_list上的每个sk都是有数据可读的，这里的遍历必要的(不同于select/poll的遍历，它不管有没数据可读都需要遍历一些来判断，这样就做了很多无用功。)</p>
+</li>
+<li>
+<p>将每个sk收集到的事件，通过epoll_wait传入的events数组回传并唤醒相应的process。</p>
+</li>
+</ol>
+</blockquote>
+<p>（3）epoll唤醒逻辑
+整个epoll的协议栈唤醒逻辑如下(对于可读事件而言)：</p>
+<blockquote>
+<ol>
+<li>
+<p>协议数据包到达网卡并被排入socket sk的接收队列</p>
+</li>
+<li>
+<p>睡眠在sk的睡眠队列wait_entry被唤醒，wait_entry_sk的回调函数epoll_callback_sk被执行</p>
+</li>
+<li>
+<p>epoll_callback_sk将当前sk插入epoll的ready_list中</p>
+</li>
+<li>
+<p>唤醒睡眠在epoll的单独睡眠队列single_epoll_wait_list的wait_entry，wait_entry_proc被唤醒执行回调函数epoll_callback_proc</p>
+</li>
+<li>
+<p>遍历epoll的ready_list，挨个调用每个sk的poll逻辑收集发生的事件</p>
+</li>
+<li>
+<p>将每个sk收集到的事件，通过epoll_wait传入的events数组回传并唤醒相应的process。</p>
+</li>
+</ol>
+</blockquote>
+<p>epoll巧妙的引入一个中间层解决了大量监控socket的无效遍历问题。细心的同学会发现，epoll在中间层上为每个监控的socket准备了一个单独的回调函数epoll_callback_sk，而对于select/poll，所有的socket都公用一个相同的回调函数。正是这个单独的回调epoll_callback_sk使得每个socket都能单独处理自身，当自己就绪的时候将自身socket挂入epoll的ready_list。同时，epoll引入了一个睡眠队列single_epoll_wait_list，分割了两类睡眠等待。process不再睡眠在所有的socket的睡眠队列上，而是睡眠在epoll的睡眠队列上，在等待”任意一个socket可读就绪”事件。而中间wait_entry_sk则代替process睡眠在具体的socket上，当socket就绪的时候，它就可以处理自身了。</p>
+<h3 id="53-etedge-triggered-边沿触发-vs-ltlevel-triggered-水平触发">5.3 ET(Edge Triggered 边沿触发) vs LT(Level Triggered 水平触发)</h3>
+<h4 id="531-et-vs-lt---概念">5.3.1 ET vs LT - 概念</h4>
+<p>说到epoll就不能不说说epoll事件的两种模式了，下面是两个模式的基本概念</p>
+<p>Edge Triggered (ET) 边沿触发</p>
+<ul>
+<li>socket的接收缓冲区状态变化时触发读事件，即空的接收缓冲区刚接收到数据时触发读事件</li>
+<li>socket的发送缓冲区状态变化时触发写事件，即满的缓冲区刚空出空间时触发读事件
+仅在缓冲区状态变化时触发事件，比如数据缓冲去从无到有的时候(不可读-可读)</li>
+</ul>
+<p>Level Triggered (LT) 水平触发</p>
+<ul>
+<li>socket接收缓冲区不为空，有数据可读，则读事件一直触发</li>
+<li>socket发送缓冲区不满可以继续写入数据，则写事件一直触发
+符合思维习惯，epoll_wait返回的事件就是socket的状态
+通常情况下，大家都认为ET模式更为高效，实际上是不是呢？下面我们来说说两种模式的本质：
+我们来回顾一下，5.2节（3）epoll唤醒逻辑 的第五个步骤</li>
+</ul>
+<blockquote>
+<p>[5] 遍历epoll的ready_list，挨个调用每个sk的poll逻辑收集发生的事件</p>
+</blockquote>
+<p>大家是不是有个疑问呢：挂在ready_list上的sk什么时候会被移除掉呢？其实，sk从ready_list移除的时机正是区分两种事件模式的本质。因为，通过上面的介绍，我们知道ready_list是否为空是epoll_wait是否返回的条件。于是，在两种事件模式下，步骤5如下：</p>
+<p>对于Edge Triggered (ET) 边沿触发：</p>
+<blockquote>
+<p>[5] 遍历epoll的ready_list，将sk从ready_list中移除，然后调用该sk的poll逻辑收集发生的事件</p>
+</blockquote>
+<p>对于Level Triggered (LT) 水平触发：</p>
+<blockquote>
+<p>[5.1] 遍历epoll的ready_list，将sk从ready_list中移除，然后调用该sk的poll逻辑收集发生的事件</p>
+<p>[5.2] 如果该sk的poll函数返回了关心的事件(对于可读事件来说，就是POLL_IN事件)，那么该sk被重新加入到epoll的ready_list中。</p>
+</blockquote>
+<p>对于可读事件而言，在ET模式下，如果某个socket有新的数据到达，那么该sk就会被排入epoll的ready_list，从而epoll_wait就一定能收到可读事件的通知(调用sk的poll逻辑一定能收集到可读事件)。于是，我们通常理解的缓冲区状态变化(从无到有)的理解是不准确的，准确的理解应该是是否有新的数据达到缓冲区。</p>
+<p>而在LT模式下，某个sk被探测到有数据可读，那么该sk会被重新加入到read_list，那么在该sk的数据被全部取走前，下次调用epoll_wait就一定能够收到该sk的可读事件(调用sk的poll逻辑一定能收集到可读事件)，从而epoll_wait就能返回。</p>
+<h4 id="532-et-vs-lt---性能">5.3.2 ET vs LT - 性能</h4>
+<p>通过上面的概念介绍，我们知道对于可读事件而言，LT比ET多了两个操作：(1)对ready_list的遍历的时候，对于收集到可读事件的sk会重新放入ready_list；(2)下次epoll_wait的时候会再次遍历上次重新放入的sk，如果sk本身没有数据可读了，那么这次遍历就变得多余了。
+在服务端有海量活跃socket的时候，LT模式下，epoll_wait返回的时候，会有海量的socket sk重新放入ready_list。如果，用户在第一次epoll_wait返回的时候，将有数据的socket都处理掉了，那么下次epoll_wait的时候，上次epoll_wait重新入ready_list的sk被再次遍历就有点多余，这个时候LT确实会带来一些性能损失。然而，实际上会存在很多多余的遍历么？</p>
+<p>先不说第一次epoll_wait返回的时候，用户进程能否都将有数据返回的socket处理掉。在用户处理的过程中，如果该socket有新的数据上来，那么协议栈发现sk已经在ready_list中了，那么就不需要再次放入ready_list，也就是在LT模式下，对该sk的再次遍历不是多余的，是有效的。同时，我们回归epoll高效的场景在于，服务器有海量socket，但是活跃socket较少的情况下才会体现出epoll的高效、高性能。因此，在实际的应用场合，绝大多数情况下，ET模式在性能上并不会比LT模式具有压倒性的优势，至少，目前还没有实际应用场合的测试表面ET比LT性能更好。</p>
+<h4 id="533-et-vs-lt---复杂度">5.3.3 ET vs LT - 复杂度</h4>
+<p>我们知道，对于可读事件而言，在阻塞模式下，是无法识别队列空的事件的，并且，事件通知机制，仅仅是通知有数据，并不会通知有多少数据。于是，在阻塞模式下，在epoll_wait返回的时候，我们对某个socket_fd调用recv或read读取并返回了一些数据的时候，我们不能再次直接调用recv或read，因为，如果socket_fd已经无数据可读的时候，进程就会阻塞在该socket_fd的recv或read调用上，这样就影响了IO多路复用的逻辑(我们希望是阻塞在所有被监控socket的epoll_wait调用上，而不是单独某个socket_fd上)，造成其他socket饿死，即使有数据来了，也无法处理。</p>
+<p>接下来，我们只能再次调用epoll_wait来探测一些socket_fd，看是否还有数据可读。在LT模式下，如果socket_fd还有数据可读，那么epoll_wait就一定能够返回，接着，我们就可以对该socket_fd调用recv或read读取数据。然而，在ET模式下，尽管socket_fd还是数据可读，但是如果没有新的数据上来，那么epoll_wait是不会通知可读事件的。这个时候，epoll_wait阻塞住了，这下子坑爹了，明明有数据你不处理，非要等新的数据来了在处理，那么我们就死扛咯，看谁先忍不住。</p>
+<p>等等，在阻塞模式下，不是不能用ET的么？是的，正是因为有这样的缺点，ET强制需要在非阻塞模式下使用。在ET模式下，epoll_wait返回socket_fd有数据可读，我们必须要读完所有数据才能离开。因为，如果不读完，epoll不会在通知你了，虽然有新的数据到来的时候，会再次通知，但是我们并不知道新数据会不会来，以及什么时候会来。由于在阻塞模式下，我们是无法通过recv/read来探测空数据事件，于是，我们必须采用非阻塞模式，一直read直到EAGAIN。因此，ET要求socket_fd非阻塞也就不难理解了。</p>
+<p>另外，epoll_wait原本的语意是：监控并探测socket是否有数据可读(对于读事件而言)。LT模式保留了其原本的语意，只要socket还有数据可读，它就能不断反馈，于是，我们想什么时候读取处理都可以，我们永远有再次poll的机会去探测是否有数据可以处理，这样带来了编程上的很大方便，不容易死锁造成某些socket饿死。相反，ET模式修改了epoll_wait原本的语意，变成了：监控并探测socket是否有新的数据可读。</p>
+<p>于是，在epoll_wait返回socket_fd可读的时候，我们需要小心处理，要不然会造成死锁和socket饿死现象。典型如listen_fd返回可读的时候，我们需要不断的accept直到EAGAIN。假设同时有三个请求到达，epoll_wait返回listen_fd可读，这个时候，如果仅仅accept一次拿走一个请求去处理，那么就会留下两个请求，如果这个时候一直没有新的请求到达，那么再次调用epoll_wait是不会通知listen_fd可读的，于是epoll_wait只能睡眠到超时才返回，遗留下来的两个请求一直得不到处理，处于饿死状态。</p>
+<h4 id="534-et-vs-lt---总结">5.3.4 ET vs LT - 总结</h4>
+<p>最后总结一下，ET和LT模式下epoll_wait返回的条件</p>
+<p>ET - 对于读操作</p>
+<blockquote>
+<p>[1] 当接收缓冲buffer内待读数据增加的时候时候(由空变为不空的时候、或者有新的数据进入缓冲buffer)</p>
+<p>[2] 调用epoll_ctl(EPOLL_CTL_MOD)来改变socket_fd的监控事件，也就是重新mod socket_fd的EPOLLIN事件，并且接收缓冲buffer内还有数据没读取。(这里不能是EPOLL_CTL_ADD的原因是，epoll不允许重复ADD的，除非先DEL了，再ADD)</p>
+<p>因为epoll_ctl(ADD或MOD)会调用sk的poll逻辑来检查是否有关心的事件，如果有，就会将该sk加入到epoll的ready_list中，下次调用epoll_wait的时候，就会遍历到该sk，然后会重新收集到关心的事件返回。</p>
+</blockquote>
+<p>ET - 对于写操作</p>
+<blockquote>
+<p>[1] 发送缓冲buffer内待发送的数据减少的时候(由满状态变为不满状态的时候、或者有部分数据被发出去的时候)
+[2] 调用epoll_ctl(EPOLL_CTL_MOD)来改变socket_fd的监控事件，也就是重新mod socket_fd的EPOLLOUT事件，并且发送缓冲buffer还没满的时候。</p>
+</blockquote>
+<p>LT - 对于读操作</p>
+<blockquote>
+<p>LT就简单多了，唯一的条件就是，接收缓冲buffer内有可读数据的时候
+LT - 对于写操作
+LT就简单多了，唯一的条件就是，发送缓冲buffer还没满的时候
+在绝大多少情况下，ET模式并不会比LT模式更为高效，同时，ET模式带来了不好理解的语意，这样容易造成编程上面的复杂逻辑和坑点。因此，建议还是采用LT模式来编程更为舒爽。</p>
+</blockquote>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li><a href="https://man7.org/linux/man-pages/man7/epoll.7.html">https://man7.org/linux/man-pages/man7/epoll.7.html</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Epoll">https://en.wikipedia.org/wiki/Epoll</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Kqueue">https://en.wikipedia.org/wiki/Kqueue</a></li>
+<li><a href="https://fd3kyt.github.io/posts/implementation-of-epoll/">https://fd3kyt.github.io/posts/implementation-of-epoll/</a></li>
+</ul>
+</div>
+	</section>
+
+
+</article>
+
+		</main>
+		<div class="w-full h-0 flex-none order-3"></div>
+		<aside role="contentinfo"
+			class="w-full md:w-2/5 xl:w-1/2 md:pr-12 lg:pr-20 xl:pr-24 order-4 md:order-3 md:sticky md:bottom-0 self-end max-w-2xl">
+			<div class="md:float-right md:text-right leading-loose tracking-tight md:mb-2">
+				
+	<div class="md:max-w-xs  flex flex-col md:items-end">
+	<ul class="font-serif flex-grow-0 flex justify-between flex-wrap md:flex-col">
+	
+	
+	<li class="px-1 md:px-0">
+		<a href="/posts/" title="Posts page" 
+			class="font-medium text-medium-red-violet-600 hover:text-medium-red-violet-400" >
+			Posts
+		</a>
+	</li>
+	
+	<li class="px-1 md:px-0">
+		<a href="/categories/" title="Categories page" >
+			Categories
+		</a>
+	</li>
+	
+	<li class="px-1 md:px-0">
+		<a href="/tags/" title="Tags page" >
+			Tags
+		</a>
+	</li>
+	
+	<li class="px-1 md:px-0">
+		<a href="/about/" title="About page" >
+			About
+		</a>
+	</li>
+	
+	<li class="px-1 md:px-0">
+		<a href="/book/" title="Book page" >
+			Book
+		</a>
+	</li>
+	
+	
+	
+	
+	<div id="fastSearch" class="m-0">
+		<input id="searchInput" type="text" size=10 
+			class="bg-gray-100 focus:outline-none border-b border-gray-100 focus:border-eucalyptus-300 md:text-right
+			placeholder-java-500 min-w-0 max-w-xxxs"
+			placeholder="search" />
+		<ul id="searchResults" class="bg-gray-200 px-2 divide-y divide-gray-400">
+		</ul>
+	</div>
+	
+</ul>
+	
+
+<div class="flex flex-wrap-reverse md:justify-end content-end md:content-start justify-start items-start   max-h-16">
+	
+	<a href='http://github.com/qingants' target="_blank" class="github icon pl-1 text-eucalyptus-400 hover:text-java-400" title="github link" rel="noopener"
+		aria-label="follow on github——Opens in a new window">
+		
+		<div class="fill-current h-8 w-8">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <g>
+        <path fill="none" d="M0 0h24v24H0z"/>
+        <path fill-rule="nonzero" d="M5.883 18.653c-.3-.2-.558-.455-.86-.816a50.32 50.32 0 0 1-.466-.579c-.463-.575-.755-.84-1.057-.949a1 1 0 0 1 .676-1.883c.752.27 1.261.735 1.947 1.588-.094-.117.34.427.433.539.19.227.33.365.44.438.204.137.587.196 1.15.14.023-.382.094-.753.202-1.095C5.38 15.31 3.7 13.396 3.7 9.64c0-1.24.37-2.356 1.058-3.292-.218-.894-.185-1.975.302-3.192a1 1 0 0 1 .63-.582c.081-.024.127-.035.208-.047.803-.123 1.937.17 3.415 1.096A11.731 11.731 0 0 1 12 3.315c.912 0 1.818.104 2.684.308 1.477-.933 2.613-1.226 3.422-1.096.085.013.157.03.218.05a1 1 0 0 1 .616.58c.487 1.216.52 2.297.302 3.19.691.936 1.058 2.045 1.058 3.293 0 3.757-1.674 5.665-4.642 6.392.125.415.19.879.19 1.38a300.492 300.492 0 0 1-.012 2.716 1 1 0 0 1-.019 1.958c-1.139.228-1.983-.532-1.983-1.525l.002-.446.005-.705c.005-.708.007-1.338.007-1.998 0-.697-.183-1.152-.425-1.36-.661-.57-.326-1.655.54-1.752 2.967-.333 4.337-1.482 4.337-4.66 0-.955-.312-1.744-.913-2.404a1 1 0 0 1-.19-1.045c.166-.414.237-.957.096-1.614l-.01.003c-.491.139-1.11.44-1.858.949a1 1 0 0 1-.833.135A9.626 9.626 0 0 0 12 5.315c-.89 0-1.772.119-2.592.35a1 1 0 0 1-.83-.134c-.752-.507-1.374-.807-1.868-.947-.144.653-.073 1.194.092 1.607a1 1 0 0 1-.189 1.045C6.016 7.89 5.7 8.694 5.7 9.64c0 3.172 1.371 4.328 4.322 4.66.865.097 1.201 1.177.544 1.748-.192.168-.429.732-.429 1.364v3.15c0 .986-.835 1.725-1.96 1.528a1 1 0 0 1-.04-1.962v-.99c-.91.061-1.662-.088-2.254-.485z"/>
+    </g>
+</svg>
+
+		</div>
+	</a>
+	
+</div>
+	<div class="text-sm text-gray-500 leading-tight a-gray">
+		Copyright © 2022 Qingants
+		<br />
+		Built with Hugo and theme <a href="https://github.com/heyeshuang/hugo-theme-tokiwa">Tokiwa</a>. 10416 words in this page.
+	</div>
+</div>
+
+			</div>
+		</aside>
+		<footer class="w-full md:w-3/5 xl:w-1/2 order-3 max-w-3xl md:order-4 pt-2">
+			
+<hr class="double-line" />
+<div class="flex flex-wrap justify-between pb-2 leading-loose font-serif">
+    
+    <a class="flex-grow-0" href="/posts/mysql%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/">
+        <svg class="fill-current inline-block h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24"
+            height="24">
+            <path fill="none" d="M0 0h24v24H0z" />
+            <path d="M7.828 11H20v2H7.828l5.364 5.364-1.414 1.414L4 12l7.778-7.778 1.414 1.414z" /></svg>
+        
+    </a>
+    
+    
+    <a class="flex-grow-0" href="/posts/%E6%89%A3%E8%B4%B9%E6%9C%8D%E5%8A%A1%E8%AE%BE%E8%AE%A1/">
+        扣费服务设计
+        <svg class="fill-current inline-block h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24"
+            height="24">
+            <path fill="none" d="M0 0h24v24H0z" />
+            <path d="M16.172 11l-5.364-5.364 1.414-1.414L20 12l-7.778 7.778-1.414-1.414L16.172 13H4v-2z" /></svg></a>
+    
+</div>
+<div >
+
+
+
+</div>
+<hr />
+<div class="pb-2">
+    <div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "qingants" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<hr />
+
+		</footer>
+		
+
+<script src="/dist/app.js"></script>
+
+
+<script src="/lib/fuse.min.js"></script> 
+<script src="/lib/fastsearch.js"></script>
+
+	</div>
+</body>
+
+</html>
