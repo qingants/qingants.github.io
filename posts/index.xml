@@ -253,14 +253,5 @@ LT就简单多了，唯一的条件就是，发送缓冲buffer还没满的时候
 </description>
     </item>
     
-    <item>
-      <title></title>
-      <link>https://qingants.github.io/posts/mysql%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://qingants.github.io/posts/mysql%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/</guid>
-      <description></description>
-    </item>
-    
   </channel>
 </rss>
